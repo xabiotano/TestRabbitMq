@@ -10,7 +10,7 @@ services:
        - RABBITMQ_DEFAULT_PASS=123456
 
   rabbit:
-    image: zauberpony/rabbitmq-x-consistent-hash
+    image: heidiks/rabbitmq-delayed-message-exchange:4.2.0-management
     container_name: rabbit
     environment:
       - RABBITMQ_DEFAULT_USER=admin

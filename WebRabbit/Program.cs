@@ -6,11 +6,20 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+// Add Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddDelayedMessageScheduler();
+
+
     x.AddConsumer<SubmitOrderEventConsumer>();
     x.AddConsumer<CancelOrderEventConsumer>();
+    x.AddConsumer<PackageOrderEventConsumer>();
+    x.AddConsumer<ShipOrderEventConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -19,7 +28,8 @@ builder.Services.AddMassTransit(x =>
             h.Username("admin");
             h.Password("123456");
         });
-        
+        cfg.UseDelayedMessageScheduler();
+
         cfg.Message<IOrderEvent>(x => x.SetEntityName("order-events-hash"));
         cfg.Publish<IOrderEvent>(x => x.ExchangeType = "x-consistent-hash");
 
@@ -35,6 +45,21 @@ builder.Services.AddMassTransit(x =>
         {
             x.Exclude = true;
             x.ExchangeType = "x-consistent-hash";
+        });
+
+        //Shipping events
+        cfg.Message<IShipEvent>(x => x.SetEntityName("ship-events-ex"));
+       
+        // cfg.Publish<IOrderEvent>(x => x.ExchangeType = "x-consistent-hash"); no need to define it as is default
+        cfg.Message<ShipOrderEvent>(x => x.SetEntityName("ship-events-ex"));
+        cfg.Publish<ShipOrderEvent>(x =>
+        {
+            x.Exclude = true; //no need to define exchangetype as is default
+        });
+        cfg.Message<PackageOrderEvent>(x => x.SetEntityName("ship-events-ex"));
+        cfg.Publish<PackageOrderEvent>(x =>
+        {
+            x.Exclude = true; //no need to define exchangetype as is default
         });
 
         for (int i = 0; i < 4; i++) //4 Pods se esperan
@@ -56,7 +81,18 @@ builder.Services.AddMassTransit(x =>
                     s.RoutingKey = "1";                   
                 });
             });
-        }    
+        }
+
+
+        cfg.ReceiveEndpoint($"ship-events", e =>
+        {
+            e.ConfigureConsumeTopology = false;
+
+            e.ConfigureConsumer<ShipOrderEventConsumer>(context);
+            e.ConfigureConsumer<PackageOrderEventConsumer>(context);
+
+            e.Bind("ship-events-ex");
+        });
     });
 });
 
@@ -65,6 +101,11 @@ builder.Services.AddMassTransit(x =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseAuthorization();
 

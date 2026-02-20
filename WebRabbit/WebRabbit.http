@@ -1,6 +1,6 @@
 @WebRabbit_HostAddress = http://localhost:5279
 
-GET {{WebRabbit_HostAddress}}/weatherforecast/
+GET {{WebRabbit_HostAddress}}/swagger/
 Accept: application/json
 
 ###
