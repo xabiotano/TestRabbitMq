@@ -6,7 +6,7 @@ namespace WebRabbit.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class OrdersController(IPublishEndpoint publishEndpoint, ISendEndpointProvider sendEndpointProvider, ILogger<OrdersController> logger)
+    public class OrdersController(IPublishEndpoint publishEndpoint, ILogger<OrdersController> logger)
         : ControllerBase
     {
 
@@ -21,9 +21,7 @@ namespace WebRabbit.Controllers
                 context.SetRoutingKey(orderEvent.OrderId);
             });
         }
-
-
-
+        
         [HttpGet]
         [Route("cancel")]
         public async Task PublicarOrderCanceled()
@@ -33,20 +31,6 @@ namespace WebRabbit.Controllers
             {
                 context.SetRoutingKey(orderEvent.OrderId);
             });
-        }
-
-        [HttpGet]
-        [Route("send/create")]
-        public async Task SendOrderCreated()
-        {
-            var endpoint = await sendEndpointProvider.GetSendEndpoint(new Uri("exchange:order-events-hash"));
-            var orderEvent = new SubmitOrderEvent($"CREATED {Guid.NewGuid().ToString()}");
-
-            await endpoint.Send(orderEvent, ctx =>
-            {
-                ctx.SetRoutingKey(orderEvent.OrderId);
-            });
-
         }
     }
 }
