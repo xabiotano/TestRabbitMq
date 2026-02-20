@@ -24,8 +24,8 @@ The solution is based on:
 ## 1️⃣ Main Exchange
 
 A single exchange is used:
-order-events-hash
-Type: x-consistent-hash
+* order-events-hash
+* Type: x-consistent-hash
 
 This exchange distributes messages across multiple queues based on the hash of `OrderId`.
 
@@ -34,10 +34,11 @@ This exchange distributes messages across multiple queues based on the hash of `
 ## 2️⃣ Processing Queues
 
 N queues are created (example: 4):
-order-events-0
-order-events-1
-order-events-2
-order-events-3
+
+* order-events-0
+* order-events-1
+* order-events-2
+* order-events-3
 
 Each queue:
 - Is bound to the `order-events-hash` exchange
