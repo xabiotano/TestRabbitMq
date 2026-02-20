@@ -1,0 +1,20 @@
+services:
+  webrabbit:
+    image: ${DOCKER_REGISTRY-}webrabbit
+    container_name: webrabbit
+    build:
+      context: .
+      dockerfile: WebRabbit/Dockerfile
+    environment:
+       - RabbitMqConnection=admin
+       - RABBITMQ_DEFAULT_PASS=123456
+
+  rabbit:
+    image: zauberpony/rabbitmq-x-consistent-hash
+    container_name: rabbit
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=123456
+    ports:
+      - "5672:5672"
+      - "15672:15672"
