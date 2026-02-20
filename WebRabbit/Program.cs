@@ -48,20 +48,18 @@ builder.Services.AddMassTransit(x =>
         });
 
         //Shipping events
-        cfg.Message<IShipEvent>(x => x.SetEntityName("ship-events-ex"));
-       
-        // cfg.Publish<IOrderEvent>(x => x.ExchangeType = "x-consistent-hash"); no need to define it as is default
-        cfg.Message<ShipOrderEvent>(x => x.SetEntityName("ship-events-ex"));
+        cfg.Message<ShipOrderEvent>(x => x.SetEntityName(nameof(ShipOrderEventConsumer)));
         cfg.Publish<ShipOrderEvent>(x =>
         {
-            x.Exclude = true; //no need to define exchangetype as is default
-        });
-        cfg.Message<PackageOrderEvent>(x => x.SetEntityName("ship-events-ex"));
-        cfg.Publish<PackageOrderEvent>(x =>
-        {
-            x.Exclude = true; //no need to define exchangetype as is default
+            x.Exclude = true;
         });
 
+        cfg.Message<PackageOrderEvent>(x => x.SetEntityName(nameof(PackageOrderEventConsumer)));
+        cfg.Publish<PackageOrderEvent>(x =>
+        {
+            x.Exclude = true;
+        });
+        
         for (int i = 0; i < 4; i++) //4 Pods se esperan
         {
             cfg.ReceiveEndpoint($"order-events-{i}", e =>
@@ -83,16 +81,19 @@ builder.Services.AddMassTransit(x =>
             });
         }
 
-
-        cfg.ReceiveEndpoint($"ship-events", e =>
+        // 1 exchange = 1 queue 
+        cfg.ReceiveEndpoint(nameof(ShipOrderEvent), e =>
         {
             e.ConfigureConsumeTopology = false;
-
             e.ConfigureConsumer<ShipOrderEventConsumer>(context);
-            e.ConfigureConsumer<PackageOrderEventConsumer>(context);
-
-            e.Bind("ship-events-ex");
         });
+
+        cfg.ReceiveEndpoint(nameof(PackageOrderEvent),e =>
+        {
+            e.ConfigureConsumeTopology = false;
+            e.ConfigureConsumer<PackageOrderEventConsumer>(context);
+        });
+
     });
 });
 

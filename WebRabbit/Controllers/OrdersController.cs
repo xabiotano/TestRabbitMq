@@ -16,8 +16,8 @@ namespace WebRabbit.Controllers
 
 
         [HttpGet]
-        [Route("create")]
-        public async Task PublicarOrderCreated()
+        [Route("SubmitOrderEvent")]
+        public async Task SubmitOrderEvent()
         {
             var orderEvent = new SubmitOrderEvent($"CREATED {Guid.NewGuid().ToString()}");
             await publishEndpoint.Publish(orderEvent, context =>
@@ -27,8 +27,8 @@ namespace WebRabbit.Controllers
         }
         
         [HttpGet]
-        [Route("cancel")]
-        public async Task PublicarOrderCanceled()
+        [Route("CancelOrderEvent")]
+        public async Task CancelOrderEvent()
         {
             var orderEvent = new CancelOrderEvent($"CANCELED {Guid.NewGuid().ToString()}");
             await publishEndpoint.Publish(orderEvent, context =>
@@ -36,54 +36,21 @@ namespace WebRabbit.Controllers
                 context.SetRoutingKey(orderEvent.OrderId);
             });
         }
-
+        
         [HttpGet]
-        [Route("schedule/createorder")]
-        public async Task<Guid> ScheduleCreateOrder()
-        {
-            var orderEvent = new SubmitOrderEvent($"CREATED {Guid.NewGuid().ToString()}");
-
-            var message = await messageScheduler.SchedulePublish(
-                DateTime.UtcNow + TimeSpan.FromSeconds(20),
-                orderEvent);
-
-            return message.TokenId;
-        }
-
-        [HttpGet]
-        [Route("schedule/shiporder")]
-        public async Task<Guid> ScheduleShipOrder()
+        [Route("ShipOrderEvent")]
+        public async Task ShipOrderEvent()
         {
             var orderEvent = new ShipOrderEvent($"SHIPPED {Guid.NewGuid().ToString()}");
-
-            var message = await messageScheduler.SchedulePublish(
-                DateTime.UtcNow + TimeSpan.FromSeconds(20),
-                orderEvent);
-
-            return message.TokenId;
+            await publishEndpoint.Publish(orderEvent);
         }
 
         [HttpGet]
-        [Route("cancel-schedule/{tokenId}")]
-        public async Task CancelSchedule(string tokenId)
+        [Route("PackageOrderEvent")]
+        public async Task PackageOrderEvent()
         {
-            var orderEvent = new ShipOrderEvent($"SHIPPED {Guid.NewGuid().ToString()}");
-            await messageScheduler.CancelScheduledPublish<ShipOrderEvent>(Guid.Parse(tokenId)); // this will never work :)
-
-        }
-
-
-        [HttpGet]
-        [Route("schedule/packageorder")]
-        public async Task<Guid> SchedulePackageOrder()
-        {
-            var packageEvent = new PackageOrderEvent($"PACKAGED {Guid.NewGuid().ToString()}");
-
-            var message = await messageScheduler.SchedulePublish(
-                DateTime.UtcNow + TimeSpan.FromSeconds(20),
-                packageEvent);
-
-            return message.TokenId;
+            var orderEvent = new PackageOrderEvent($"PACKAGED {Guid.NewGuid().ToString()}");
+            await publishEndpoint.Publish(orderEvent);
         }
     }
 }
